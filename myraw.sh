@@ -153,10 +153,13 @@ sudo chown $OE_USER:$OE_USER /var/log/$OE_USER
 #--------------------------------------------------
 echo -e "\n==== Installing ODOO Server ===="
 sudo git clone https://MSaafan@bitbucket.org/MSaafan/odoo.git  $OE_HOME_EXT/
+sudo pip3 install psycopg2-binary pdfminer.six==20201018
+sudo npm install -g less
+sudo npm install -g less-plugin-clean-css
 
 if [ $IS_ENTERPRISE = "True" ]; then
     # Odoo Enterprise install!
-    sudo pip3 install psycopg2-binary pdfminer.six
+    sudo pip3 install psycopg2-binary pdfminer.six==20201018
     echo -e "\n--- Create symlink for node"
     sudo ln -s /usr/bin/nodejs /usr/bin/node
     sudo su $OE_USER -c "mkdir $OE_HOME/enterprise"
