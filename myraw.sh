@@ -15,8 +15,8 @@
 ################################################################################
 
 OE_USER="antmate"
-OE_HOME="/antmate"
-OE_HOME_EXT="/antmate/antmate-server"
+OE_HOME="/$OE_USER"
+OE_HOME_EXT="/$OE_USER/${OE_USER}-server"
 # The default port where this Odoo instance will run under (provided you use the command -c in the terminal)
 # Set to true if you want to install it, false if you don't need it or have it already installed.
 INSTALL_WKHTMLTOPDF="True"
@@ -158,11 +158,8 @@ sudo chown $OE_USER:$OE_USER /var/log/$OE_USER
 echo -e "\n==== Installing ODOO Server ===="
 sudo git clone https://MSaafan@bitbucket.org/MSaafan/odoo.git  $OE_HOME_EXT/
 sudo pip3 install psycopg2-binary pdfminer.six==20201018
-sudo ln -s /usr/bin/nodejs /usr/bin/node
-sudo -H pip3 install num2words ofxparse dbfread ebaysdk firebase_admin pyOpenSSL
 sudo npm install -g less
 sudo npm install -g less-plugin-clean-css
-
 
 if [ $IS_ENTERPRISE = "True" ]; then
     # Odoo Enterprise install!
@@ -192,7 +189,7 @@ fi
 
 echo -e "\n---- Create custom module directory ----"
 sudo su $OE_USER -c "mkdir $OE_HOME/custom"
-sudo su $OE_USER -c "mkdir $OE_HOME/custom/$OE_USER"
+sudo su $OE_USER -c "mkdir $OE_HOME/custom/addons"
 
 echo -e "\n---- Setting permissions on home folder ----"
 sudo chown -R $OE_USER:$OE_USER $OE_HOME/*
