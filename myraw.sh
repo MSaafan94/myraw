@@ -37,7 +37,7 @@ OE_SUPERADMIN="adminn"
 GENERATE_RANDOM_PASSWORD="False"
 OE_CONFIG="${OE_USER}-server"
 # Set the website name
-WEBSITE_NAME="_"
+WEBSITE_NAME="antmate.online"
 # Set the default Odoo longpolling port (you still have to use -c /etc/odoo-server.conf for example to use this.)
 LONGPOLLING_PORT="8072"
 # Set to "True" to install certbot and have ssl enabled, "False" to use http
@@ -51,20 +51,16 @@ ADMIN_EMAIL="odoo@example.com"
 ## https://github.com/odoo/odoo/wiki/Wkhtmltopdf ):
 ## https://www.odoo.com/documentation/16.0/administration/install.html
 
-if wkhtmltopdf --version >/dev/null 2>&1; then
-  echo "wkhtmltopdf is already installed. Skipping installation."
+# Check if the operating system is Ubuntu 22.04
+if [[ $(lsb_release -r -s) == "22.04" ]]; then
+    WKHTMLTOX_X64="https://packages.ubuntu.com/jammy/wkhtmltopdf"
+    WKHTMLTOX_X32="https://packages.ubuntu.com/jammy/wkhtmltopdf"
+    #No Same link works for both 64 and 32-bit on Ubuntu 22.04
 else
-  echo "wkhtmltopdf is not installed. Proceeding with installation."
-  # Check if the operating system is Ubuntu 22.04
-  if [[ $(lsb_release -r -s) == "22.04" ]]; then
-      WKHTMLTOX_X64="https://packages.ubuntu.com/jammy/wkhtmltopdf"
-      WKHTMLTOX_X32="https://packages.ubuntu.com/jammy/wkhtmltopdf"
-      #No Same link works for both 64 and 32-bit on Ubuntu 22.04
-  else
-      # For older versions of Ubuntu
-      WKHTMLTOX_X64="https://github.com/wkhtmltopdf/wkhtmltopdf/releases/download/0.12.5/wkhtmltox_0.12.5-1.$(lsb_release -c -s)_amd64.deb"
-      WKHTMLTOX_X32="https://github.com/wkhtmltopdf/wkhtmltopdf/releases/download/0.12.5/wkhtmltox_0.12.5-1.$(lsb_release -c -s)_i386.deb"
-  fi
+    # For older versions of Ubuntu
+    WKHTMLTOX_X64="https://github.com/wkhtmltopdf/wkhtmltopdf/releases/download/0.12.5/wkhtmltox_0.12.5-1.$(lsb_release -c -s)_amd64.deb"
+    WKHTMLTOX_X32="https://github.com/wkhtmltopdf/wkhtmltopdf/releases/download/0.12.5/wkhtmltox_0.12.5-1.$(lsb_release -c -s)_i386.deb"
+fi
 
 #--------------------------------------------------
 # Update Server
@@ -115,29 +111,36 @@ sudo npm install -g rtlcss
 # Install Wkhtmltopdf if needed
 #--------------------------------------------------
 if [ $INSTALL_WKHTMLTOPDF = "True" ]; then
-  echo -e "\n---- Install wkhtml and place shortcuts on correct place for ODOO 13 ----"
-  #pick up correct one from x64 & x32 versions:
-  if [ "`getconf LONG_BIT`" == "64" ];then
-      _url=$WKHTMLTOX_X64
-  else
-      _url=$WKHTMLTOX_X32
-  fi
-  sudo wget $_url
-  
-
-  if [[ $(lsb_release -r -s) == "22.04" ]]; then
-    # Ubuntu 22.04 LTS
-    sudo apt install wkhtmltopdf -y
-  else
+  # Check if wkhtmltopdf is already installed
+  if ! command -v wkhtmltopdf &> /dev/null; then
+    echo -e "\n---- Install wkhtml and place shortcuts on correct place for ODOO 13 ----"
+    
+    # Pick the correct one from x64 & x32 versions:
+    if [ "`getconf LONG_BIT`" == "64" ]; then
+        _url=$WKHTMLTOX_X64
+    else
+        _url=$WKHTMLTOX_X32
+    fi
+    sudo wget $_url
+    
+    if [[ $(lsb_release -r -s) == "22.04" ]]; then
+      # Ubuntu 22.04 LTS
+      sudo apt install wkhtmltopdf -y
+    else
       # For older versions of Ubuntu
-    sudo gdebi --n `basename $_url`
+      sudo gdebi --n `basename $_url`
+    fi
+    
+    # Create symlinks
+    sudo ln -s /usr/local/bin/wkhtmltopdf /usr/bin
+    sudo ln -s /usr/local/bin/wkhtmltoimage /usr/bin
+  else
+    echo "wkhtmltopdf is already installed, skipping installation."
   fi
-  
-  sudo ln -s /usr/local/bin/wkhtmltopdf /usr/bin
-  sudo ln -s /usr/local/bin/wkhtmltoimage /usr/bin
 else
   echo "Wkhtmltopdf isn't installed due to the choice of the user!"
 fi
+
 
 echo -e "\n---- Create ODOO system user ----"
 sudo adduser --system --quiet --shell=/bin/bash --home=$OE_HOME --gecos 'ODOO' --group $OE_USER
@@ -158,6 +161,8 @@ sudo chown $OE_USER:$OE_USER /var/log/$OE_USER
 echo -e "\n==== Installing ODOO Server ===="
 sudo git clone https://MSaafan@bitbucket.org/MSaafan/odoo.git  $OE_HOME_EXT/
 sudo pip3 install psycopg2-binary pdfminer.six==20201018
+sudo ln -s /usr/bin/nodejs /usr/bin/node
+sudo -H pip3 install num2words ofxparse dbfread ebaysdk firebase_admin pyOpenSSL
 sudo npm install -g less
 sudo npm install -g less-plugin-clean-css
 
