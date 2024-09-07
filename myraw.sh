@@ -52,15 +52,17 @@ ADMIN_EMAIL="odoo@example.com"
 ## https://www.odoo.com/documentation/16.0/administration/install.html
 
 # Check if the operating system is Ubuntu 22.04
-if [[ $(lsb_release -r -s) == "22.04" ]]; then
-    WKHTMLTOX_X64="https://packages.ubuntu.com/jammy/wkhtmltopdf"
-    WKHTMLTOX_X32="https://packages.ubuntu.com/jammy/wkhtmltopdf"
-    #No Same link works for both 64 and 32-bit on Ubuntu 22.04
-else
-    # For older versions of Ubuntu
-    WKHTMLTOX_X64="https://github.com/wkhtmltopdf/wkhtmltopdf/releases/download/0.12.5/wkhtmltox_0.12.5-1.$(lsb_release -c -s)_amd64.deb"
-    WKHTMLTOX_X32="https://github.com/wkhtmltopdf/wkhtmltopdf/releases/download/0.12.5/wkhtmltox_0.12.5-1.$(lsb_release -c -s)_i386.deb"
-fi
+# if [[ $(lsb_release -r -s) == "22.04" ]]; then
+#     WKHTMLTOX_X64="https://packages.ubuntu.com/jammy/wkhtmltopdf"
+#     WKHTMLTOX_X32="https://packages.ubuntu.com/jammy/wkhtmltopdf"
+#     #No Same link works for both 64 and 32-bit on Ubuntu 22.04
+# else
+#     # For older versions of Ubuntu
+WKHTMLTOX_X64="https://github.com/wkhtmltopdf/wkhtmltopdf/releases/download/0.12.5/wkhtmltox_0.12.5-1.$(lsb_release -c -s)_amd64.deb"
+WKHTMLTOX_X32="https://github.com/wkhtmltopdf/wkhtmltopdf/releases/download/0.12.5/wkhtmltox_0.12.5-1.$(lsb_release -c -s)_i386.deb"
+
+#     WKHTMLTOX_X32="https://github.com/wkhtmltopdf/wkhtmltopdf/releases/download/0.12.5/wkhtmltox_0.12.5-1.$(lsb_release -c -s)_i386.deb"
+# fi
 
 #--------------------------------------------------
 # Update Server
@@ -111,35 +113,50 @@ sudo npm install -g rtlcss
 # Install Wkhtmltopdf if needed
 #--------------------------------------------------
 if [ $INSTALL_WKHTMLTOPDF = "True" ]; then
-  # Check if wkhtmltopdf is already installed
-  if ! command -v wkhtmltopdf &> /dev/null; then
-    echo -e "\n---- Install wkhtml and place shortcuts on correct place for ODOO 13 ----"
-    
-    # Pick the correct one from x64 & x32 versions:
-    if [ "`getconf LONG_BIT`" == "64" ]; then
-        _url=$WKHTMLTOX_X64
-    else
-        _url=$WKHTMLTOX_X32
-    fi
-    sudo wget $_url
-    
-    if [[ $(lsb_release -r -s) == "22.04" ]]; then
-      # Ubuntu 22.04 LTS
-      sudo apt install wkhtmltopdf -y
-    else
-      # For older versions of Ubuntu
-      sudo gdebi --n `basename $_url`
-    fi
-    
-    # Create symlinks
-    sudo ln -s /usr/local/bin/wkhtmltopdf /usr/bin
-    sudo ln -s /usr/local/bin/wkhtmltoimage /usr/bin
+  echo -e "\n---- Install wkhtml and place shortcuts on correct place for ODOO 13 ----"
+  #pick up correct one from x64 & x32 versions:
+  if [ "`getconf LONG_BIT`" == "64" ];then
+      _url=$WKHTMLTOX_X64
   else
-    echo "wkhtmltopdf is already installed, skipping installation."
+      _url=$WKHTMLTOX_X32
   fi
+  sudo wget $_url
+  sudo gdebi --n `basename $_url`
+  sudo ln -s /usr/local/bin/wkhtmltopdf /usr/bin
+  sudo ln -s /usr/local/bin/wkhtmltoimage /usr/bin
 else
   echo "Wkhtmltopdf isn't installed due to the choice of the user!"
 fi
+# if [ $INSTALL_WKHTMLTOPDF = "True" ]; then
+#   # Check if wkhtmltopdf is already installed
+#   if ! command -v wkhtmltopdf &> /dev/null; then
+#     echo -e "\n---- Install wkhtml and place shortcuts on correct place for ODOO 13 ----"
+    
+#     # Pick the correct one from x64 & x32 versions:
+#     if [ "`getconf LONG_BIT`" == "64" ]; then
+#         _url=$WKHTMLTOX_X64
+#     else
+#         _url=$WKHTMLTOX_X32
+#     fi
+#     sudo wget $_url
+    
+#     if [[ $(lsb_release -r -s) == "22.04" ]]; then
+#       # Ubuntu 22.04 LTS
+#       sudo apt install wkhtmltopdf -y
+#     else
+#       # For older versions of Ubuntu
+#       sudo gdebi --n `basename $_url`
+#     fi
+    
+#     # Create symlinks
+#     sudo ln -s /usr/local/bin/wkhtmltopdf /usr/bin
+#     sudo ln -s /usr/local/bin/wkhtmltoimage /usr/bin
+#   else
+#     echo "wkhtmltopdf is already installed, skipping installation."
+#   fi
+# else
+#   echo "Wkhtmltopdf isn't installed due to the choice of the user!"
+# fi
 
 
 echo -e "\n---- Create ODOO system user ----"
@@ -197,7 +214,8 @@ sudo su $OE_USER -c "mkdir $OE_HOME/custom"
 sudo su $OE_USER -c "mkdir $OE_HOME/custom/$OE_USER"
 
 echo -e "\n---- Setting permissions on home folder ----"
-sudo chown -R $OE_USER:$OE_USER $OE_HOME/*
+sudo chmod -R 777 $OE_HOME
+
 
 echo -e "* Create server config file"
 
